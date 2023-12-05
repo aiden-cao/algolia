@@ -1,5 +1,54 @@
 const IndexFactory = require('@tryghost/algolia-indexer');
 const transforms = require('@tryghost/algolia-fragmenter');
+const convert = require('html-to-text').convert;
+
+const transformToAlgoliaObject = (posts, ignoreSlugs) => {
+    const algoliaObjects = []
+
+    posts.map((post) => {
+        // Define the properties we need for Algolia
+        const algoliaPost = {
+            objectID: post.id,
+            slug: post.slug,
+            url: post.url,
+            html: post.html,
+            image: post.feature_image,
+            title: post.title,
+            tags: [],
+            authors: [],
+            reading_time: post.reading_time || 3,
+            feature_image_alt: post.feature_image_alt,
+            excerpt: post.excerpt,
+            published_at: post.published_at,
+        }
+
+        // If we have an array of slugs to ignore, and the current
+        // post slug is in that list, skip this loop iteration
+        if (ignoreSlugs) {
+            if (ignoreSlugs.includes(post.slug)) {
+                return false
+            }
+        }
+
+        if (post.tags && post.tags.length) {
+            post.tags.forEach((tag) => {
+                algoliaPost.tags.push({ name: tag.name, slug: tag.slug })
+            })
+        }
+
+        if (post.authors && post.authors.length) {
+            post.authors.forEach((author) => {
+                algoliaPost.authors.push({ name: author.name, slug: author.slug })
+            })
+        }
+
+        algoliaObjects.push(algoliaPost)
+
+        return algoliaPost
+    })
+
+    return algoliaObjects
+}
 
 exports.handler = async (event) => {
     const {key} = event.queryStringParameters;
@@ -48,7 +97,7 @@ exports.handler = async (event) => {
     node.push(post);
 
     // Transform into Algolia object with the properties we need
-    const algoliaObject = transforms.transformToAlgoliaObject(node);
+    const algoliaObject = transformToAlgoliaObject(node);
 
     // Create fragments of the post
     const fragments = algoliaObject.reduce(transforms.fragmentTransformer, []);
@@ -58,6 +107,10 @@ exports.handler = async (event) => {
         // sets up the settings for the index.
         const index = new IndexFactory(algoliaSettings);
         await index.setSettingsForIndex();
+        const fragments = context.fragments.map((fragment) => {
+            const text = convert(fragment.html)
+            return { ...fragment, html: text }
+         });
         await index.save(fragments);
         console.log('Fragments successfully saved to Algolia index'); // eslint-disable-line no-console
         return {
