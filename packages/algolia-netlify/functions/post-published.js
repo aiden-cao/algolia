@@ -53,6 +53,7 @@ const transformToAlgoliaObject = (posts, ignoreSlugs) => {
 exports.handler = async (event) => {
     const {key} = event.queryStringParameters;
 
+    console.log('handler start')
     // TODO: Deprecate this in the future and make the key mandatory
     if (key && key !== process.env.NETLIFY_KEY) {
         return {
@@ -102,6 +103,7 @@ exports.handler = async (event) => {
     // Create fragments of the post
     const fragments = algoliaObject.reduce(transforms.fragmentTransformer, []);
 
+    console.log('start update index')
     try {
         // Instanciate the Algolia indexer, which connects to Algolia and
         // sets up the settings for the index.
@@ -111,6 +113,7 @@ exports.handler = async (event) => {
             const text = convert(fragment.html)
             return { ...fragment, html: text }
          });
+        console.log('update index')
         await index.save(fragments);
         console.log('Fragments successfully saved to Algolia index'); // eslint-disable-line no-console
         return {
