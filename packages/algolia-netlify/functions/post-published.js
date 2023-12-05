@@ -79,7 +79,29 @@ exports.handler = async (event) => {
     const algoliaSettings = {
         appId: process.env.ALGOLIA_APP_ID,
         apiKey: process.env.ALGOLIA_API_KEY,
-        index: process.env.ALGOLIA_INDEX
+        index: process.env.ALGOLIA_INDEX,
+        "indexSettings": {
+          "distinct": true,
+          "attributeForDistinct": "slug",
+          "customRanking": [
+            "desc(customRanking.heading)",
+            "asc(customRanking.position)"
+          ],
+          "searchableAttributes": [
+            "title",
+            "headings",
+            "html",
+            "url",
+            "tags.name",
+            "tags",
+            "authors.name",
+            "authors"
+          ],
+          "attributesForFaceting": [
+            "filterOnly(slug)",
+            "searchable(tags.slug)"
+          ]
+        }
     };
 
     let {post} = JSON.parse(event.body);
