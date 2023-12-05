@@ -109,12 +109,12 @@ exports.handler = async (event) => {
         // sets up the settings for the index.
         const index = new IndexFactory(algoliaSettings);
         await index.setSettingsForIndex();
-        const fragments = context.fragments.map((fragment) => {
+        const _fragments = fragments.map((fragment) => {
             const text = convert(fragment.html)
             return { ...fragment, html: text }
          });
         console.log('update index')
-        await index.save(fragments);
+        await index.save(_fragments);
         console.log('Fragments successfully saved to Algolia index'); // eslint-disable-line no-console
         return {
             statusCode: 200,
